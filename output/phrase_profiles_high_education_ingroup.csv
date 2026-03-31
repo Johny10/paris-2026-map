@@ -1,0 +1,25 @@
+"group","phrase","doc_count","doc_share","phrase_en","phrase_plot","n_left","n_right"
+"Left-leaning","offen_neues",6,3.24324324324324,"open new things","open new things",185,405
+"Left-leaning","politisch_links",6,3.24324324324324,"politically left-wing","politically left-wing",185,405
+"Left-leaning","eher_links",6,3.24324324324324,"rather left-wing","rather left-wing",185,405
+"Left-leaning","politisch_interessiert",5,2.7027027027027,"politically interested","politically interested",185,405
+"Left-leaning","kulturell_interessiert",5,2.7027027027027,"culturally interested","culturally interested",185,405
+"Left-leaning","politisch_eher",4,2.16216216216216,"politically rather","politically rather",185,405
+"Left-leaning","offen_freundlich",3,1.62162162162162,"open friendly","open friendly",185,405
+"Left-leaning","sozial_links",3,1.62162162162162,"social left-wing","social left-wing",185,405
+"Left-leaning","eigene_meinung",3,1.62162162162162,"own opinion","own opinion",185,405
+"Left-leaning","offen_tolerant",3,1.62162162162162,"open tolerant","open tolerant",185,405
+"Left-leaning","tolerant_offen",3,1.62162162162162,"tolerant open","tolerant open",185,405
+"Left-leaning","sozial_engagiert",3,1.62162162162162,"social engaged","social engaged",185,405
+"Right-leaning","politisch_interessiert",10,2.46913580246914,"politically interested","politically interested",185,405
+"Right-leaning","gut_ausgebildet",8,1.97530864197531,"well educated","well educated",185,405
+"Right-leaning","offen_neues",5,1.23456790123457,"open new things","open new things",185,405
+"Right-leaning","politisch_mitte",5,1.23456790123457,"politically center","politically center",185,405
+"Right-leaning","normale_leute",5,1.23456790123457,"ordinary people","ordinary people",185,405
+"Right-leaning","normale_bürger",5,1.23456790123457,"ordinary citizens","ordinary citizens",185,405
+"Right-leaning","vielseitig_interessiert",4,0.987654320987654,"versatile interested","versatile interested",185,405
+"Right-leaning","weltoffen_tolerant",4,0.987654320987654,"cosmopolitan tolerant","cosmopolitan tolerant",185,405
+"Right-leaning","offen_gegenüber",4,0.987654320987654,"open toward others","open toward others",185,405
+"Right-leaning","mitte_rechts",4,0.987654320987654,"center right-wing","center right-wing",185,405
+"Right-leaning","kulturell_interessiert",4,0.987654320987654,"culturally interested","culturally interested",185,405
+"Right-leaning","politisch_eher",4,0.987654320987654,"politically rather","politically rather",185,405

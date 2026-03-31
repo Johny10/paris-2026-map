@@ -1,0 +1,23 @@
+"group","phrase","doc_count","doc_share","phrase_en","phrase_plot","n_left","n_right"
+"Left-leaning","politisch_rechts",5,2.77777777777778,"politically right-wing","politically right-wing",180,383
+"Left-leaning","eigene_meinung",4,2.22222222222222,"own opinion","own opinion",180,383
+"Left-leaning","rechts_orientiert",3,1.66666666666667,"right-wing oriented","right-wing oriented",180,383
+"Left-leaning","stur_egoistisch",2,1.11111111111111,"stubborn selfish","stubborn selfish",180,383
+"Left-leaning","offen_neues",2,1.11111111111111,"open new things","open new things",180,383
+"Left-leaning","arrogant_eingebildet",2,1.11111111111111,"arrogant conceited","arrogant conceited",180,383
+"Left-leaning","menschen_geld",2,1.11111111111111,"people money","people money",180,383
+"Left-leaning","menschen_denen",2,1.11111111111111,"people them","people them",180,383
+"Left-leaning","svp_fdp",2,1.11111111111111,"SVP FDP","SVP FDP",180,383
+"Left-leaning","meinung_ändern",2,1.11111111111111,"opinion change","opinion change",180,383
+"Right-leaning","politisch_rechts",5,1.30548302872063,"politically right-wing","politically right-wing",180,383
+"Right-leaning","links_rechtsextreme",3,0.783289817232376,"left-wing far-right extremists","left-wing far-right extremists",180,383
+"Right-leaning","stark_links",3,0.783289817232376,"strongly left-wing","strongly left-wing",180,383
+"Right-leaning","leute_denen",3,0.783289817232376,"people them","people them",180,383
+"Right-leaning","leute_leben",3,0.783289817232376,"people live","people live",180,383
+"Right-leaning","eigene_meinung",3,0.783289817232376,"own opinion","own opinion",180,383
+"Right-leaning","selber_denken",3,0.783289817232376,"for themselves think","for themselves think",180,383
+"Right-leaning","eher_rechts",3,0.783289817232376,"rather right-wing","rather right-wing",180,383
+"Right-leaning","uninteressiert_gleichgültig",2,0.522193211488251,"uninterested indifferent","uninterested indifferent",180,383
+"Right-leaning","tag_hinein",2,0.522193211488251,"day by the day","day by the day",180,383
+"Right-leaning","konservativ_ängstlich",2,0.522193211488251,"conservative fearful","conservative fearful",180,383
+"Right-leaning","links_stark",2,0.522193211488251,"left-wing strongly","left-wing strongly",180,383
