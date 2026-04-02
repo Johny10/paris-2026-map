@@ -101,16 +101,32 @@ h1 {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(247, 241, 233, 0.96));
 }
 
-.portrait-badge {
+.portrait-frame {
   width: 58px;
   height: 58px;
   border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.34),
+    0 12px 24px rgba(31, 26, 23, 0.14);
+}
+
+.portrait-badge {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
   color: white;
   font-weight: 700;
   font-size: 1rem;
-  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.34);
+}
+
+.portrait-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .winner-meta {
@@ -174,6 +190,7 @@ h1 {
   border-radius: var(--radius-xl);
   display: grid;
   gap: 14px;
+  overflow: clip;
 }
 
 .control-group {
@@ -300,6 +317,7 @@ select {
 .panel-card {
   padding: 16px;
   border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .panel-header {
@@ -368,6 +386,13 @@ select {
   font-size: 0.84rem;
 }
 
+.legend-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .mobile-summary-grid,
 .summary-grid,
 .history-grid {
@@ -417,6 +442,17 @@ select {
 .footnote {
   color: var(--muted);
   line-height: 1.55;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(31, 26, 23, 0.08);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .detail-bars {
@@ -477,12 +513,17 @@ select {
 
 .chart-shell {
   margin-top: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chart-shell svg {
   width: 100%;
   height: auto;
   display: block;
+  min-width: 620px;
 }
 
 .chart-legend {
@@ -573,6 +614,28 @@ select {
     backdrop-filter: blur(20px);
   }
 
+  .segmented {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .segmented::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero-meta {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .hero-meta::-webkit-scrollbar {
+    display: none;
+  }
+
   .panel-header {
     flex-direction: column;
     align-items: stretch;
@@ -584,6 +647,19 @@ select {
 
   .summary-stat span {
     font-size: 1.18rem;
+  }
+
+  #map {
+    height: 48vh;
+    min-height: 300px;
+  }
+
+  #detail-card {
+    scroll-margin-top: 110px;
+  }
+
+  .detail-bars {
+    max-height: none;
   }
 
   .result-line {
