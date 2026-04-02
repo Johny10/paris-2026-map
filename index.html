@@ -70,9 +70,15 @@
         <div class="control-group candidate-group" id="candidate-group">
           <label class="control-label" for="candidate-select" id="candidate-label">Parti ou liste</label>
           <div class="select-shell" id="candidate-shell">
-            <span class="select-color-dot" id="candidate-dot" aria-hidden="true"></span>
-            <select id="candidate-select"></select>
-            <span class="select-chevron" aria-hidden="true">▾</span>
+            <button type="button" class="select-trigger" id="candidate-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="select-trigger-main">
+                <span class="select-color-dot" id="candidate-dot" aria-hidden="true"></span>
+                <span id="candidate-trigger-label"></span>
+              </span>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="select-menu" id="candidate-menu" hidden></div>
+            <select id="candidate-select" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
           </div>
           <p class="select-hint" id="candidate-hint"></p>
         </div>

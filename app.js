@@ -178,7 +178,7 @@
       currentWinnerFootnote:
         "Le bloc gagnant suit le tour affiché. La carte détaillée est volontairement limitée à 2026, la série historique étant restituée à une maille plus simple.",
       no1990:
-        "Pas d’élection municipale parisienne en 1990 : la série électorale démarre ici en juin 1995.",
+        "Pas d’élection municipale parisienne en 1990 : la série électorale parisienne affichée ici commence les 11 et 18 juin 1995.",
       mapKicker: "Carte mobile-first",
       historyKicker: "Chronologie",
       demographyKicker: "Démographie",
@@ -273,7 +273,7 @@
       currentWinnerFootnote:
         "The winning bloc follows the round on screen. Detailed mapping is intentionally limited to 2026, while older elections are shown in a simpler historical layer.",
       no1990:
-        "There was no Paris municipal election in 1990, so the electoral series shown here starts in June 1995.",
+        "There was no Paris municipal election in 1990, so the electoral series shown here begins on June 11 and June 18, 1995.",
       mapKicker: "Mobile-first map",
       historyKicker: "Timeline",
       demographyKicker: "Demography",
@@ -351,6 +351,7 @@
     granularity: "bureau",
     metric: "leader",
     candidate: null,
+    dropdownOpen: false,
     hoveredKey: null,
     selectedKey: null,
   };
@@ -381,7 +382,10 @@
     candidateLabel: document.getElementById("candidate-label"),
     candidateHint: document.getElementById("candidate-hint"),
     candidateShell: document.getElementById("candidate-shell"),
+    candidateTrigger: document.getElementById("candidate-trigger"),
+    candidateTriggerLabel: document.getElementById("candidate-trigger-label"),
     candidateDot: document.getElementById("candidate-dot"),
+    candidateMenu: document.getElementById("candidate-menu"),
     candidateSelect: document.getElementById("candidate-select"),
     mapView: document.getElementById("map-view"),
     mapKicker: document.getElementById("map-kicker"),
@@ -568,6 +572,10 @@
 
   function formatPct(value) {
     return `${Number(value).toFixed(1)}%`;
+  }
+
+  function partySymbol() {
+    return "●";
   }
 
   function initialsFor(name) {
@@ -1044,6 +1052,7 @@
     ensureCandidate();
     dom.candidateGroup.style.display = state.section === "map" && state.metric === "share" ? "grid" : "none";
     dom.candidateSelect.innerHTML = "";
+    dom.candidateMenu.innerHTML = "";
     const grouped = new Map();
     getRoundMeta(state.round).lists.forEach((candidate) => {
       const key = candidate.party.shortLabel[state.language];
@@ -1055,18 +1064,45 @@
     grouped.forEach((candidates, groupLabel) => {
       const optgroup = document.createElement("optgroup");
       optgroup.label = groupLabel;
+      const groupTitle = document.createElement("div");
+      groupTitle.className = "select-group-label";
+      groupTitle.textContent = groupLabel;
+      dom.candidateMenu.appendChild(groupTitle);
       candidates.forEach((candidate) => {
         const option = document.createElement("option");
         option.value = candidate.id;
         option.selected = candidate.id === state.candidate;
-        option.textContent = `${candidate.party.shortLabel[state.language]} · ${candidate.shortName}`;
+        option.textContent = `${partySymbol()} ${candidate.party.shortLabel[state.language]} · ${candidate.shortName}`;
         optgroup.appendChild(option);
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `select-option${candidate.id === state.candidate ? " is-active" : ""}`;
+        button.innerHTML = `
+          <span class="select-color-dot" style="background:${candidate.color}"></span>
+          <span class="select-option-copy">
+            <span class="select-option-title">${candidate.party.shortLabel[state.language]}</span>
+            <span class="select-option-subtitle">${candidate.shortName}</span>
+          </span>
+          <span class="select-check">${candidate.id === state.candidate ? "✓" : ""}</span>
+        `;
+        button.addEventListener("click", () => {
+          state.candidate = candidate.id;
+          state.dropdownOpen = false;
+          renderAll();
+        });
+        dom.candidateMenu.appendChild(button);
       });
       dom.candidateSelect.appendChild(optgroup);
     });
     const selected = getCandidateMeta(state.round, state.candidate);
+    dom.candidateTriggerLabel.textContent = selected
+      ? `${selected.party.shortLabel[state.language]} · ${selected.shortName}`
+      : "";
     dom.candidateDot.style.background = selected?.color || "#7d776f";
     dom.candidateShell.style.setProperty("--candidate-accent", selected?.color || "#7d776f");
+    dom.candidateMenu.hidden = !state.dropdownOpen;
+    dom.candidateTrigger.setAttribute("aria-expanded", state.dropdownOpen ? "true" : "false");
   }
 
   function renderControlVisibility() {
@@ -1749,6 +1785,25 @@
   dom.candidateSelect.addEventListener("change", (event) => {
     state.candidate = event.target.value;
     renderAll();
+  });
+
+  dom.candidateTrigger.addEventListener("click", () => {
+    state.dropdownOpen = !state.dropdownOpen;
+    renderAll();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!dom.candidateGroup.contains(event.target) && state.dropdownOpen) {
+      state.dropdownOpen = false;
+      renderAll();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.dropdownOpen) {
+      state.dropdownOpen = false;
+      renderAll();
+    }
   });
 
   dom.resetView.addEventListener("click", () => {
