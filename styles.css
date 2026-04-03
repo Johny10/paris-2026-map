@@ -706,6 +706,8 @@ select {
     top: 8px;
     z-index: 500;
     backdrop-filter: blur(20px);
+    padding: 12px;
+    gap: 12px;
   }
 
   .segmented {
@@ -717,6 +719,10 @@ select {
 
   .segmented::-webkit-scrollbar {
     display: none;
+  }
+
+  .segmented button {
+    padding: 12px 16px;
   }
 
   .hero-meta {
@@ -735,8 +741,27 @@ select {
     align-items: stretch;
   }
 
+  .winner-banner {
+    grid-template-columns: 52px 1fr;
+    align-items: start;
+  }
+
   .ghost-button {
     width: 100%;
+  }
+
+  .mobile-summary-grid,
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mobile-summary-grid .summary-stat:last-child:nth-child(odd),
+  .summary-grid .summary-stat:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
   }
 
   .summary-stat span {
@@ -744,8 +769,8 @@ select {
   }
 
   #map {
-    height: 48vh;
-    min-height: 300px;
+    height: 44vh;
+    min-height: 280px;
   }
 
   #detail-card {

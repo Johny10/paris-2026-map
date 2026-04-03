@@ -9,6 +9,7 @@
     round2Json:
       "https://cdn.paris.fr/paris/2026/03/23/1c44370057138acd63333e945033e3a3.json",
   };
+  const OFFICIAL_HISTORY = window.PARIS_OFFICIAL_HISTORY || { years: [], history: {}, geojson: null, familyMeta: {} };
 
   const STATIC_HISTORY = [
     {
@@ -449,14 +450,13 @@
   }
 
   function districtLabel(arr) {
-    if (String(arr) === "centre" || [1, 2, 3, 4].includes(Number(arr))) return t("parisCentre");
     return state.language === "fr"
       ? `${arr}${t("arrondissementSuffix")}`
       : `${ordinal(Number(arr))} ${t("arrondissementSuffix")}`;
   }
 
   function arrondissementGroupKey(arr) {
-    return [1, 2, 3, 4].includes(Number(arr)) ? "centre" : String(arr);
+    return String(arr);
   }
 
   const PARTY_PROFILES = [
@@ -769,7 +769,8 @@
 
   const liveData = fetched;
   const featureIndex = new Map(liveData.features.map((feature) => [feature.properties.id_bv, feature]));
-  const layerIndex = new Map();
+  const bureauLayerIndex = new Map();
+  const arrondissementLayerIndex = new Map();
 
   function getRoundMeta(roundId) {
     return liveData.rounds[roundId];
@@ -919,9 +920,67 @@
 
   const HISTORY = [...STATIC_HISTORY, buildLiveHistoryEntry()];
   const YEAR_OPTIONS = HISTORY.map((entry) => ({ id: entry.year, label: entry.label }));
+  const MAP_YEAR_OPTIONS = [...(OFFICIAL_HISTORY.years || []).map((year) => ({ id: year, label: year })), { id: "2026", label: "2026" }];
 
   function getElection(year = state.year) {
     return HISTORY.find((entry) => entry.year === year);
+  }
+
+  function hasOfficialMapYear(year = state.year) {
+    return year === "2026" || Boolean(OFFICIAL_HISTORY.history?.[year]);
+  }
+
+  function currentGeometryMode() {
+    return state.year === "2026" && state.granularity === "bureau" ? "bureau" : "arrondissement";
+  }
+
+  function getHistoricalRoundData(year = state.year, roundId = state.round) {
+    return OFFICIAL_HISTORY.history?.[year]?.rounds?.[roundId] || null;
+  }
+
+  function normalizeHistoricalList(list) {
+    const family = OFFICIAL_HISTORY.familyMeta?.[list.id] || FAMILY_META[list.id] || FAMILY_META.other;
+    return {
+      id: list.id,
+      name: family.label[state.language],
+      shortName: family.label[state.language],
+      party: {
+        familyId: list.id,
+        label: family.label,
+        shortLabel: family.label,
+      },
+      color: family.color,
+      cityShare: list.shareCast,
+      cityVotes: list.votes,
+    };
+  }
+
+  function getDisplayedRoundMeta(roundId = state.round) {
+    if (state.year === "2026") return getRoundMeta(roundId);
+    const round = getHistoricalRoundData(state.year, roundId);
+    if (!round) return { city: { turnoutPct: 0, registeredVoters: 0, castVotes: 0, ballotsCast: 0 }, lists: [] };
+    return {
+      city: round.city,
+      lists: round.city.lists.map(normalizeHistoricalList),
+    };
+  }
+
+  function getDisplayedCandidateMeta(roundId = state.round, candidateId = state.candidate) {
+    return getDisplayedRoundMeta(roundId).lists.find((item) => item.id === candidateId) || null;
+  }
+
+  function candidateDisplay(candidate) {
+    if (!candidate) return "";
+    return state.year === "2026"
+      ? `${candidate.party.shortLabel[state.language]} · ${candidate.shortName}`
+      : candidate.party.shortLabel[state.language];
+  }
+
+  function getArrondissementRow(arrondissement, roundId = state.round, year = state.year) {
+    if (year === "2026") {
+      return arrondissementData[roundId].get(String(arrondissement)) || null;
+    }
+    return getHistoricalRoundData(year, roundId)?.arrondissements?.[String(arrondissement)] || null;
   }
 
   function winnerForElection(entry) {
@@ -939,7 +998,7 @@
       .filter((row) => row.castVotes > 0)
       .map((row) => {
         if (state.metric === "turnout") return row.turnoutPct;
-        if (state.metric === "share") return row.listLookup[state.candidate]?.shareCast ?? 0;
+        if (state.metric === "share") return getListLookup(row)[state.candidate]?.shareCast ?? 0;
         return row.leaderShare;
       })
       .sort((a, b) => a - b);
@@ -950,16 +1009,26 @@
   }
 
   function ensureCandidate() {
-    const round = getRoundMeta(state.round);
+    const round = getDisplayedRoundMeta(state.round);
     if (!round.lists.some((list) => list.id === state.candidate)) {
       state.candidate = round.lists[0]?.id || null;
     }
   }
 
   function currentMapSelection() {
-    if (state.granularity === "arrondissement") {
+    if (currentGeometryMode() === "arrondissement") {
       const key = state.selectedKey || state.hoveredKey;
-      return key ? arrondissementData[state.round].get(key.replace("arr-", "")) || null : null;
+      if (!key) return null;
+      const arrondissement = Number(String(key).replace("arr-", ""));
+      const row = getArrondissementRow(arrondissement);
+      return row
+        ? {
+            key,
+            label: districtLabel(arrondissement),
+            arrondissement,
+            ...row,
+          }
+        : null;
     }
     const feature = featureIndex.get(state.selectedKey) || featureIndex.get(state.hoveredKey);
     if (!feature) return null;
@@ -973,9 +1042,19 @@
   }
 
   function currentMapRows() {
-    return state.granularity === "bureau"
+    return currentGeometryMode() === "bureau"
       ? liveData.features.map((feature) => getFeatureRound(feature, state.round))
-      : [...arrondissementData[state.round].values()];
+      : OFFICIAL_HISTORY.history?.[state.year]
+        ? Object.values(getHistoricalRoundData(state.year, state.round)?.arrondissements || {})
+        : [...arrondissementData[state.round].values()];
+  }
+
+  function getListLookup(row) {
+    if (row.listLookup) return row.listLookup;
+    return (row.lists || []).reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {});
   }
 
   function countAvailableRows() {
@@ -1019,11 +1098,11 @@
   function renderWinnerBanner() {
     const election = getElection();
     const winner = winnerForElection(election);
-    const liveLeader = state.year === "2026" ? getRoundMeta(state.round).lists[0] : null;
-    const bannerColor = liveLeader?.color || winner.color || election.winner.color;
-    const winnerName = liveLeader?.shortName || election.winner.name;
-    const partyLabel = liveLeader?.party?.label?.[state.language] || election.winner.partyLabel[state.language];
-    const share = liveLeader?.cityShare || (state.round === "round1" ? winner.first || 0 : winner.second || winner.first || 0);
+    const displayedLeader = getDisplayedRoundMeta(state.round).lists[0] || null;
+    const bannerColor = displayedLeader?.color || winner.color || election.winner.color;
+    const winnerName = state.year === "2026" ? displayedLeader?.shortName || election.winner.name : election.winner.name;
+    const partyLabel = displayedLeader?.party?.label?.[state.language] || election.winner.partyLabel[state.language];
+    const share = displayedLeader?.cityShare || (state.round === "round1" ? winner.first || 0 : winner.second || winner.first || 0);
     const portraitUrl = getPortraitUrl(winnerName);
 
     dom.winnerBanner.innerHTML = `
@@ -1042,7 +1121,7 @@
       </div>
     `;
     dom.heroMeta.innerHTML = `
-      <span class="meta-pill">${t("turnoutAtBureau")}</span>
+      <span class="meta-pill">${state.year === "2026" ? t("turnoutAtBureau") : `${state.year} · ${t("arrondissement")}`}</span>
       <span class="meta-pill">${t("historicalWindow")}</span>
       <span class="meta-pill">${t("liveFeed")}</span>
     `;
@@ -1054,7 +1133,7 @@
     dom.candidateSelect.innerHTML = "";
     dom.candidateMenu.innerHTML = "";
     const grouped = new Map();
-    getRoundMeta(state.round).lists.forEach((candidate) => {
+    getDisplayedRoundMeta(state.round).lists.forEach((candidate) => {
       const key = candidate.party.shortLabel[state.language];
       const bucket = grouped.get(key) || [];
       bucket.push(candidate);
@@ -1072,7 +1151,7 @@
         const option = document.createElement("option");
         option.value = candidate.id;
         option.selected = candidate.id === state.candidate;
-        option.textContent = `${partySymbol()} ${candidate.party.shortLabel[state.language]} · ${candidate.shortName}`;
+        option.textContent = `${partySymbol()} ${candidateDisplay(candidate)}`;
         optgroup.appendChild(option);
 
         const button = document.createElement("button");
@@ -1095,9 +1174,9 @@
       });
       dom.candidateSelect.appendChild(optgroup);
     });
-    const selected = getCandidateMeta(state.round, state.candidate);
+    const selected = getDisplayedCandidateMeta(state.round, state.candidate);
     dom.candidateTriggerLabel.textContent = selected
-      ? `${selected.party.shortLabel[state.language]} · ${selected.shortName}`
+      ? candidateDisplay(selected)
       : "";
     dom.candidateDot.style.background = selected?.color || "#7d776f";
     dom.candidateShell.style.setProperty("--candidate-accent", selected?.color || "#7d776f");
@@ -1108,18 +1187,15 @@
   function renderControlVisibility() {
     const showMap = state.section === "map";
     const showHistory = state.section === "history";
-    dom.yearGroup.style.display = showHistory ? "grid" : "none";
+    dom.yearGroup.style.display = showMap || showHistory ? "grid" : "none";
     dom.roundGroup.style.display = showMap || showHistory ? "grid" : "none";
     dom.granularityGroup.style.display = showMap ? "grid" : "none";
     dom.metricGroup.style.display = showMap ? "grid" : "none";
   }
 
   function getMapStyle(feature) {
-    const isBureauMode = state.granularity === "bureau";
-    const round = getFeatureRound(feature, state.round);
-    const dataRow = isBureauMode
-      ? round
-      : arrondissementData[state.round].get(arrondissementGroupKey(feature.properties.arrondissement));
+    const isBureauMode = currentGeometryMode() === "bureau";
+    const dataRow = isBureauMode ? getFeatureRound(feature, state.round) : getArrondissementRow(feature.properties.arrondissement);
     const activeKey = isBureauMode
       ? feature.properties.id_bv
       : `arr-${arrondissementGroupKey(feature.properties.arrondissement)}`;
@@ -1136,7 +1212,7 @@
     }
 
     if (state.metric === "leader") {
-      const leader = getCandidateMeta(state.round, dataRow.leaderId);
+      const leader = getDisplayedCandidateMeta(state.round, dataRow.leaderId);
       return {
         fillColor: leader?.color || "#999999",
         fillOpacity: Math.max(0.48, Math.min(0.92, dataRow.leaderShare / 100)),
@@ -1148,7 +1224,7 @@
 
     const range = getMapStyle.rangeCache || getCurrentMapRange();
     getMapStyle.rangeCache = range;
-    const candidate = getCandidateMeta(state.round, state.candidate);
+    const candidate = getDisplayedCandidateMeta(state.round, state.candidate);
     const palette =
       state.metric === "turnout"
         ? ["#fff4d6", "#f29c52", "#ae2f23"]
@@ -1156,7 +1232,7 @@
     const value =
       state.metric === "turnout"
         ? dataRow.turnoutPct
-        : dataRow.listLookup[state.candidate]?.shareCast ?? 0;
+        : getListLookup(dataRow)[state.candidate]?.shareCast ?? 0;
     const span = Math.max(range.max - range.min, 0.0001);
     const progress = Math.min(1, Math.max(0, (value - range.min) / span));
     const fillColor =
@@ -1179,7 +1255,7 @@
       return;
     }
 
-    const round = getRoundMeta(state.round);
+    const round = getDisplayedRoundMeta(state.round);
     if (state.metric === "leader") {
       dom.legend.innerHTML = `
         <div class="legend-title">${t("leader")}</div>
@@ -1189,7 +1265,7 @@
             (candidate) => `
               <div class="legend-item">
                 <span class="legend-swatch" style="background:${candidate.color}"></span>
-                <span>${candidate.party.shortLabel[state.language]} · ${candidate.shortName}</span>
+                <span>${candidateDisplay(candidate)}</span>
                 <span>${formatPct(candidate.cityShare)}</span>
               </div>
             `,
@@ -1201,7 +1277,7 @@
     }
 
     const range = getCurrentMapRange();
-    const candidate = getCandidateMeta(state.round, state.candidate);
+    const candidate = getDisplayedCandidateMeta(state.round, state.candidate);
     const palette =
       state.metric === "turnout"
         ? ["#fff4d6", "#f29c52", "#ae2f23"]
@@ -1223,7 +1299,7 @@
   }
 
   function currentCityLeader() {
-    return getRoundMeta(state.round).lists[0];
+    return getDisplayedRoundMeta(state.round).lists[0];
   }
 
   function renderMapSummaryCards() {
@@ -1231,25 +1307,22 @@
       dom.mapSummary.innerHTML = "";
       return;
     }
-    const round = getRoundMeta(state.round);
+    const round = getDisplayedRoundMeta(state.round);
     const leader = currentCityLeader();
-    const arrWins = new Set(
-      [...arrondissementData[state.round].values()]
-        .filter((item) => item.leaderId === leader.id)
-        .map((item) => item.key),
-    ).size;
-    const strongest = [...arrondissementData[state.round].values()].sort((a, b) => b.turnoutPct - a.turnoutPct)[0];
+    const arrondissementRows = currentGeometryMode() === "bureau" ? [...arrondissementData[state.round].values()] : currentMapRows();
+    const arrWins = new Set(arrondissementRows.filter((item) => item.leaderId === leader?.id).map((item) => item.arrondissement || item.key)).size;
+    const strongest = [...arrondissementRows].sort((a, b) => b.turnoutPct - a.turnoutPct)[0];
     const target = state.metric === "share"
-      ? [...arrondissementData[state.round].values()].sort(
-          (a, b) => (b.listLookup[state.candidate]?.shareCast || 0) - (a.listLookup[state.candidate]?.shareCast || 0),
+      ? [...arrondissementRows].sort(
+          (a, b) => (getListLookup(b)[state.candidate]?.shareCast || 0) - (getListLookup(a)[state.candidate]?.shareCast || 0),
         )[0]
-      : [...arrondissementData[state.round].values()].sort((a, b) => b.leaderShare - a.leaderShare)[0];
+      : [...arrondissementRows].sort((a, b) => b.leaderShare - a.leaderShare)[0];
 
     const cards = [
       {
         title: t("winnerCard"),
-        value: `${leader.party.shortLabel[state.language]} · ${leader.shortName}`,
-        sub: `${formatPct(leader.cityShare)} · ${leader.party.label[state.language]}`,
+        value: leader ? candidateDisplay(leader) : "N/A",
+        sub: leader ? `${formatPct(leader.cityShare)} · ${leader.party.label[state.language]}` : "N/A",
       },
       {
         title: t("turnout"),
@@ -1258,26 +1331,26 @@
       },
       {
         title: t("districtsLed"),
-        value: `${arrWins} / ${arrondissementData[state.round].size}`,
-        sub: state.granularity === "arrondissement" ? t("arrondissement") : t("bureau"),
+        value: `${arrWins} / ${arrondissementRows.length}`,
+        sub: currentGeometryMode() === "bureau" ? t("bureau") : t("arrondissement"),
       },
       {
         title: t("topTurnout"),
-        value: strongest?.label || "N/A",
+        value: strongest?.label || districtLabel(strongest?.arrondissement || ""),
         sub: strongest ? formatPct(strongest.turnoutPct) : "N/A",
       },
       {
         title: t("strongestArea"),
-        value: target?.label || "N/A",
+        value: target?.label || districtLabel(target?.arrondissement || ""),
         sub:
           state.metric === "share"
-            ? formatPct(target?.listLookup[state.candidate]?.shareCast || 0)
+            ? formatPct(getListLookup(target || {})[state.candidate]?.shareCast || 0)
             : formatPct(target?.leaderShare || 0),
       },
       {
         title: t("countingProgress"),
         value: `${countAvailableRows()} / ${currentMapRows().length}`,
-        sub: state.granularity === "bureau" ? t("bureau") : t("arrondissement"),
+        sub: currentGeometryMode() === "bureau" ? t("bureau") : t("arrondissement"),
       },
     ];
 
@@ -1296,7 +1369,13 @@
     dom.summaryCard.innerHTML = `
       <div class="detail-title">${t("mapSummary")}</div>
       <div class="summary-grid">${markup}</div>
-      <p class="footnote">${t("liveOnly")}</p>
+      <p class="footnote">${
+        state.year === "2026"
+          ? t("liveOnly")
+          : state.language === "fr"
+            ? "2014 et 2020 utilisent des classeurs officiels Paris Open Data agrégés à l’arrondissement."
+            : "2014 and 2020 use official Paris Open Data arrondissement workbooks aggregated locally."
+      }</p>
     `;
   }
 
@@ -1307,11 +1386,11 @@
     return record.lists
       .slice(0, 6)
       .map((entry) => {
-        const meta = getCandidateMeta(state.round, entry.id);
+        const meta = getDisplayedCandidateMeta(state.round, entry.id);
         return `
           <div class="result-row">
             <div class="result-line">
-              <span>${meta?.party.shortLabel[state.language] || ""} · ${meta?.shortName || entry.id}</span>
+              <span>${meta ? candidateDisplay(meta) : entry.id}</span>
               <strong>${formatPct(entry.shareCast)}</strong>
             </div>
             <div class="bar-track"><div class="bar-fill" style="width:${entry.shareCast}%;background:${meta?.color || "#999"}"></div></div>
@@ -1337,10 +1416,16 @@
       return;
     }
 
-    const leader = getCandidateMeta(state.round, selection.leaderId);
+    const leader = getDisplayedCandidateMeta(state.round, selection.leaderId);
     const isArr = !selection.isBureau;
     const countingSubline = isArr
-      ? `${selection.countedCount} / ${selection.bureauCount} ${t("countingProgress").toLowerCase()}`
+      ? selection.bureauCount
+        ? `${selection.countedCount} / ${selection.bureauCount} ${t("countingProgress").toLowerCase()}`
+        : selection.wonInRound1
+          ? state.language === "fr"
+            ? "Élu dès le premier tour"
+            : "Won in the first round"
+          : t("counted")
       : selection.countingComplete
         ? t("counted")
         : t("partialResults");
@@ -1350,7 +1435,7 @@
         <div class="detail-title">${isArr ? t("selectedArr") : t("selectedBureau")}</div>
         <div class="detail-headline">${selection.label}</div>
         <p class="detail-meta">
-          ${isArr ? `${selection.bureauCount} ${t("bureau")}` : districtLabel(selection.arrondissement)} ·
+          ${isArr && selection.bureauCount ? `${selection.bureauCount} ${t("bureau")}` : districtLabel(selection.arrondissement)} ·
           ${formatNumber(selection.registeredVoters)} ${t("registered")}
         </p>
         <div class="status-pill">${t("noDataYet")}</div>
@@ -1363,7 +1448,7 @@
       <div class="detail-title">${isArr ? t("selectedArr") : t("selectedBureau")}</div>
       <div class="detail-headline">${selection.label}</div>
       <p class="detail-meta">
-        ${isArr ? `${selection.bureauCount} ${t("bureau")}` : districtLabel(selection.arrondissement)} ·
+        ${isArr && selection.bureauCount ? `${selection.bureauCount} ${t("bureau")}` : districtLabel(selection.arrondissement)} ·
         ${formatNumber(selection.registeredVoters)} ${t("registered")} ·
         ${t("turnoutLabel")} ${formatPct(selection.turnoutPct)}
       </p>
@@ -1390,21 +1475,26 @@
   }
 
   function renderMapTitle() {
-    const candidate = getCandidateMeta(state.round, state.candidate);
+    const candidate = getDisplayedCandidateMeta(state.round, state.candidate);
+    const geometryLabel = currentGeometryMode() === "bureau" ? t("bureau") : t("arrondissement");
     dom.mapTitle.textContent =
       state.metric === "leader"
-        ? `${t("mapTitleLive")} · ${t(state.granularity === "bureau" ? "bureau" : "arrondissement")}`
+        ? `${state.year === "2026" ? t("mapTitleLive") : state.year} · ${geometryLabel}`
         : state.metric === "turnout"
-          ? `${t("mapTitleLive")} · ${t("turnout")}`
-          : `${t("mapTitleLive")} · ${candidate?.party.shortLabel[state.language] || ""}`;
+          ? `${state.year === "2026" ? t("mapTitleLive") : state.year} · ${t("turnout")}`
+          : `${state.year === "2026" ? t("mapTitleLive") : state.year} · ${candidate?.party.shortLabel[state.language] || ""}`;
   }
 
   function tooltipHtml(feature) {
     const record =
-      state.granularity === "bureau"
+      currentGeometryMode() === "bureau"
         ? { label: feature.properties.label, arrondissement: feature.properties.arrondissement, ...getFeatureRound(feature, state.round) }
-        : arrondissementData[state.round].get(arrondissementGroupKey(feature.properties.arrondissement));
-    const leader = getCandidateMeta(state.round, record.leaderId);
+        : {
+            label: districtLabel(feature.properties.arrondissement),
+            arrondissement: feature.properties.arrondissement,
+            ...getArrondissementRow(feature.properties.arrondissement),
+          };
+    const leader = getDisplayedCandidateMeta(state.round, record.leaderId);
     const leaderLabel = record.castVotes ? leader?.party.shortLabel[state.language] || "N/A" : t("noDataYet");
     const leadShare = record.castVotes ? formatPct(record.leaderShare) : "…";
     return `
@@ -1650,10 +1740,25 @@
       <p class="source-copy">
         <a href="${SOURCE_URLS.round1Page}" target="_blank" rel="noreferrer">Paris 2026 · ${t("firstRound")}</a><br />
         <a href="${SOURCE_URLS.round2Page}" target="_blank" rel="noreferrer">Paris 2026 · ${t("secondRound")}</a><br />
+        <a href="https://www.data.gouv.fr/datasets/elections-municipales-2014-1ertour/" target="_blank" rel="noreferrer">Paris Open Data · 2014</a><br />
+        <a href="https://www.data.gouv.fr/datasets/elections-municipales-2020-1ertour/" target="_blank" rel="noreferrer">Paris Open Data · 2020</a><br />
         <a href="${DEMOGRAPHY.sourcePopulation}" target="_blank" rel="noreferrer">Insee · Population</a><br />
         <a href="${DEMOGRAPHY.sourceEducation}" target="_blank" rel="noreferrer">Insee · Diplômes</a>
       </p>
     `;
+  }
+
+  function ensureMapLayerVisibility() {
+    const showMap = state.section === "map";
+    const useBureauLayer = showMap && currentGeometryMode() === "bureau";
+    const useArrondissementLayer = showMap && currentGeometryMode() === "arrondissement";
+    if (useBureauLayer) {
+      if (!map.hasLayer(geoLayer)) geoLayer.addTo(map);
+      if (map.hasLayer(arrondissementLayer)) map.removeLayer(arrondissementLayer);
+    } else if (useArrondissementLayer) {
+      if (!map.hasLayer(arrondissementLayer)) arrondissementLayer.addTo(map);
+      if (map.hasLayer(geoLayer)) map.removeLayer(geoLayer);
+    }
   }
 
   function switchVisibleView() {
@@ -1661,18 +1766,28 @@
     dom.historyView.classList.toggle("is-visible", state.section === "history");
     dom.demographyView.classList.toggle("is-visible", state.section === "demography");
     if (state.section === "map") {
+      ensureMapLayerVisibility();
       setTimeout(() => map.invalidateSize(), 60);
     }
   }
 
   function refreshMap() {
     getMapStyle.rangeCache = null;
-    layerIndex.forEach((layer, id) => {
+    bureauLayerIndex.forEach((layer, id) => {
       layer.setStyle(getMapStyle(featureIndex.get(id)));
+    });
+    arrondissementLayerIndex.forEach((layer) => {
+      layer.setStyle(getMapStyle(layer.feature));
     });
   }
 
   function renderAll() {
+    if (state.section === "map" && !hasOfficialMapYear(state.year)) {
+      state.year = "2026";
+    }
+    if (state.year !== "2026") {
+      state.granularity = "arrondissement";
+    }
     renderStaticChrome();
     renderWinnerBanner();
     renderControlVisibility();
@@ -1682,10 +1797,19 @@
     });
     renderToggle(dom.sectionToggle, SECTION_OPTIONS, state.section, (value) => {
       state.section = value;
+      if (value === "map" && !hasOfficialMapYear(state.year)) {
+        state.year = "2026";
+      }
       renderAll();
     });
-    renderToggle(dom.yearToggle, YEAR_OPTIONS, state.year, (value) => {
+    renderToggle(dom.yearToggle, state.section === "map" ? MAP_YEAR_OPTIONS : YEAR_OPTIONS, state.year, (value) => {
       state.year = value;
+      if (value !== "2026") {
+        state.granularity = "arrondissement";
+      }
+      state.selectedKey = null;
+      state.hoveredKey = null;
+      ensureCandidate();
       renderAll();
     });
     renderToggle(dom.roundToggle, ROUND_OPTIONS, state.round, (value) => {
@@ -1693,7 +1817,7 @@
       ensureCandidate();
       renderAll();
     });
-    renderToggle(dom.granularityToggle, GRANULARITY_OPTIONS, state.granularity, (value) => {
+    renderToggle(dom.granularityToggle, state.year === "2026" ? GRANULARITY_OPTIONS : [GRANULARITY_OPTIONS[1]], state.granularity, (value) => {
       state.granularity = value;
       state.selectedKey = null;
       state.hoveredKey = null;
@@ -1740,12 +1864,12 @@
   const geoLayer = L.geoJSON(liveData.features, {
     style: getMapStyle,
     onEachFeature(feature, layer) {
-      layerIndex.set(feature.properties.id_bv, layer);
+      bureauLayerIndex.set(feature.properties.id_bv, layer);
 
       layer.on("mouseover", () => {
         if (isCompactViewport()) return;
         state.hoveredKey =
-          state.granularity === "bureau"
+          currentGeometryMode() === "bureau"
             ? feature.properties.id_bv
             : `arr-${arrondissementGroupKey(feature.properties.arrondissement)}`;
         layer
@@ -1768,7 +1892,7 @@
 
       layer.on("click", () => {
         const nextKey =
-          state.granularity === "bureau"
+          currentGeometryMode() === "bureau"
             ? feature.properties.id_bv
             : `arr-${arrondissementGroupKey(feature.properties.arrondissement)}`;
         state.selectedKey = state.selectedKey === nextKey ? null : nextKey;
@@ -1778,9 +1902,46 @@
         focusDetailCard();
       });
     },
+  });
+
+  const arrondissementLayer = L.geoJSON(OFFICIAL_HISTORY.geojson, {
+    style: getMapStyle,
+    onEachFeature(feature, layer) {
+      arrondissementLayerIndex.set(String(feature.properties.arrondissement), layer);
+
+      layer.on("mouseover", () => {
+        if (isCompactViewport()) return;
+        state.hoveredKey = `arr-${feature.properties.arrondissement}`;
+        layer
+          .bindTooltip(tooltipHtml(feature), {
+            sticky: true,
+            direction: "top",
+            className: "custom-tooltip",
+          })
+          .openTooltip();
+        renderDetail();
+        refreshMap();
+      });
+
+      layer.on("mouseout", () => {
+        if (isCompactViewport()) return;
+        state.hoveredKey = null;
+        renderDetail();
+        refreshMap();
+      });
+
+      layer.on("click", () => {
+        const nextKey = `arr-${feature.properties.arrondissement}`;
+        state.selectedKey = state.selectedKey === nextKey ? null : nextKey;
+        renderDetail();
+        refreshMap();
+        map.panTo(layer.getBounds().getCenter(), { animate: true, duration: 0.45 });
+        focusDetailCard();
+      });
+    },
   }).addTo(map);
 
-  map.fitBounds(geoLayer.getBounds(), { padding: [22, 22] });
+  map.fitBounds(arrondissementLayer.getBounds(), { padding: [22, 22] });
 
   dom.candidateSelect.addEventListener("change", (event) => {
     state.candidate = event.target.value;
@@ -1809,7 +1970,7 @@
   dom.resetView.addEventListener("click", () => {
     state.selectedKey = null;
     state.hoveredKey = null;
-    map.fitBounds(geoLayer.getBounds(), { padding: [22, 22] });
+    map.fitBounds((currentGeometryMode() === "bureau" ? geoLayer : arrondissementLayer).getBounds(), { padding: [22, 22] });
     renderAll();
   });
 
