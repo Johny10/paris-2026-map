@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5efe5" />
+    <title>Paris, vote par vote</title>
+    <meta
+      name="description"
+      content="Carte interactive des municipales parisiennes, avec vue bureau, vue arrondissement, chronologie électorale depuis 1995 et indicateurs démographiques."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-topbar">
+          <div>
+            <p class="eyebrow" id="eyebrow">Paris municipales</p>
+            <h1 id="hero-title">Paris, bureau par bureau et décennie par décennie.</h1>
+          </div>
+          <div class="language-switcher">
+            <span class="control-label" id="language-label">Langue</span>
+            <div class="segmented" id="language-toggle"></div>
+          </div>
+        </div>
+        <p class="hero-text" id="hero-text"></p>
+        <div class="winner-banner" id="winner-banner"></div>
+        <div class="hero-meta" id="hero-meta"></div>
+      </header>
+
+      <section class="control-strip">
+        <div class="control-group control-group-wide section-priority">
+          <span class="control-label" id="section-label">Section</span>
+          <div class="segmented" id="section-toggle"></div>
+        </div>
+
+        <div class="control-group" id="year-group">
+          <span class="control-label" id="year-label">Élection</span>
+          <div class="segmented segmented-scroll" id="year-toggle"></div>
+        </div>
+
+        <div class="control-group" id="round-group">
+          <span class="control-label" id="round-label">Tour</span>
+          <div class="segmented" id="round-toggle"></div>
+        </div>
+
+        <div class="control-group" id="granularity-group">
+          <span class="control-label" id="granularity-label">Granularité</span>
+          <div class="segmented" id="granularity-toggle"></div>
+        </div>
+
+        <div class="control-group" id="metric-group">
+          <span class="control-label" id="metric-label">Observer</span>
+          <div class="segmented" id="metric-toggle"></div>
+        </div>
+
+        <div class="control-group candidate-group" id="candidate-group">
+          <label class="control-label" for="candidate-select" id="candidate-label">Parti ou liste</label>
+          <div class="select-shell" id="candidate-shell">
+            <button type="button" class="select-trigger" id="candidate-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="select-trigger-main">
+                <span class="select-color-dot" id="candidate-dot" aria-hidden="true"></span>
+                <span id="candidate-trigger-label"></span>
+              </span>
+              <span class="select-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div class="select-menu" id="candidate-menu" hidden></div>
+            <select id="candidate-select" class="visually-hidden" tabindex="-1" aria-hidden="true"></select>
+          </div>
+          <p class="select-hint" id="candidate-hint"></p>
+        </div>
+      </section>
+
+      <main class="stack-layout">
+        <section class="surface view-panel is-visible" id="map-view">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker" id="map-kicker">Carte</p>
+              <h2 id="map-title">Paris 2026</h2>
+            </div>
+            <button id="reset-view" class="ghost-button" type="button">Réinitialiser</button>
+          </div>
+          <div id="map"></div>
+          <div class="legend-card" id="legend"></div>
+          <div class="mobile-summary-grid" id="map-summary"></div>
+          <section class="panel-card" id="detail-card"></section>
+        </section>
+
+        <section class="surface view-panel" id="history-view">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker" id="history-kicker">Chronologie</p>
+              <h2 id="history-title">Municipales parisiennes depuis 1995</h2>
+            </div>
+          </div>
+          <div class="history-grid">
+            <section class="panel-card" id="history-summary"></section>
+            <section class="panel-card" id="history-chart"></section>
+            <section class="panel-card" id="history-evolution"></section>
+          </div>
+        </section>
+
+        <section class="surface view-panel" id="demography-view">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker" id="demography-kicker">Démographie</p>
+              <h2 id="demography-title">Paris change, le vote aussi</h2>
+            </div>
+          </div>
+          <div class="history-grid">
+            <section class="panel-card" id="demo-summary"></section>
+            <section class="panel-card" id="demo-population"></section>
+            <section class="panel-card" id="demo-education"></section>
+          </div>
+        </section>
+
+        <aside class="stack-side">
+          <section class="panel-card" id="summary-card"></section>
+          <section class="panel-card note-card" id="source-card"></section>
+        </aside>
+      </main>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="./data/official-history.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
