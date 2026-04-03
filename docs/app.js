@@ -10,6 +10,23 @@
       "https://cdn.paris.fr/paris/2026/03/23/1c44370057138acd63333e945033e3a3.json",
   };
   const OFFICIAL_HISTORY = window.PARIS_OFFICIAL_HISTORY || { years: [], history: {}, geojson: null, familyMeta: {} };
+  const LOCAL_2026 = window.PARIS_2026_LOCAL_DATA || null;
+  const IS_LOCAL_CONTEXT =
+    window.location.protocol === "file:" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost";
+  const POLITICAL_COLORS = Object.freeze({
+    left: "#e14b5a",
+    right: "#2f6fdf",
+    greens: "#2b9348",
+    lfiLike: "#d9487a",
+    center: "#f08c00",
+    centerRight: "#1098ad",
+    farRight: "#6a4c93",
+    farLeft: "#8b0000",
+    other: "#7d776f",
+    dissRight: "#6f7fb7",
+  });
 
   const STATIC_HISTORY = [
     {
@@ -22,13 +39,13 @@
         name: "Jean Tiberi",
         partyLabel: { fr: "Droite parlementaire", en: "Parliamentary right" },
         shortLabel: { fr: "Droite", en: "Right" },
-        color: "#2f6fdf",
+        color: POLITICAL_COLORS.right,
       },
       shares: [
-        { id: "right", label: { fr: "Droite parlementaire", en: "Parliamentary right" }, color: "#2f6fdf", first: 47.73, second: 47.9 },
-        { id: "left", label: { fr: "Gauche parlementaire", en: "Parliamentary left" }, color: "#e14b5a", first: 34.58, second: 46.47 },
-        { id: "ecology", label: { fr: "Écologie", en: "Ecology" }, color: "#2b9348", first: 7.12, second: 0 },
-        { id: "farRight", label: { fr: "Extrême droite", en: "Far right" }, color: "#6a4c93", first: 10.04, second: 5.62 },
+        { id: "right", label: { fr: "Droite parlementaire", en: "Parliamentary right" }, color: POLITICAL_COLORS.right, first: 47.73, second: 47.9 },
+        { id: "left", label: { fr: "Gauche parlementaire", en: "Parliamentary left" }, color: POLITICAL_COLORS.left, first: 34.58, second: 46.47 },
+        { id: "ecology", label: { fr: "Écologie", en: "Ecology" }, color: POLITICAL_COLORS.greens, first: 7.12, second: 0 },
+        { id: "farRight", label: { fr: "Extrême droite", en: "Far right" }, color: POLITICAL_COLORS.farRight, first: 10.04, second: 5.62 },
       ],
       notes: {
         fr: "Première municipale parisienne de la période demandée. Il n’existe pas d’élection municipale parisienne en 1990 ; la série électorale commence ici en juin 1995.",
@@ -46,13 +63,13 @@
         name: "Bertrand Delanoë",
         partyLabel: { fr: "Gauche plurielle", en: "Plural left" },
         shortLabel: { fr: "Gauche", en: "Left" },
-        color: "#e14b5a",
+        color: POLITICAL_COLORS.left,
       },
       shares: [
-        { id: "left", label: { fr: "Gauche plurielle", en: "Plural left" }, color: "#e14b5a", first: 31.31, second: 49.6 },
-        { id: "right", label: { fr: "Droite classique", en: "Mainstream right" }, color: "#2f6fdf", first: 25.74, second: 36.17 },
-        { id: "dissRight", label: { fr: "Droite dissidente", en: "Dissident right" }, color: "#6f7fb7", first: 13.92, second: 12.31 },
-        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: "#2b9348", first: 12.35, second: 0 },
+        { id: "left", label: { fr: "Gauche plurielle", en: "Plural left" }, color: POLITICAL_COLORS.left, first: 31.31, second: 49.6 },
+        { id: "right", label: { fr: "Droite classique", en: "Mainstream right" }, color: POLITICAL_COLORS.right, first: 25.74, second: 36.17 },
+        { id: "dissRight", label: { fr: "Droite dissidente", en: "Dissident right" }, color: POLITICAL_COLORS.dissRight, first: 13.92, second: 12.31 },
+        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: POLITICAL_COLORS.greens, first: 12.35, second: 0 },
       ],
       notes: {
         fr: "Basculer à 2001 permet de voir la conquête de Paris par Bertrand Delanoë. Les écologistes sont ici séparés de la gauche socialiste, contrairement au raccourci fautif que tu signalais.",
@@ -70,13 +87,13 @@
         name: "Bertrand Delanoë",
         partyLabel: { fr: "Gauche municipale", en: "Municipal left" },
         shortLabel: { fr: "Gauche", en: "Left" },
-        color: "#e14b5a",
+        color: POLITICAL_COLORS.left,
       },
       shares: [
-        { id: "left", label: { fr: "PS-PCF-PRG-MRC", en: "Social-democratic left" }, color: "#e14b5a", first: 41.6, second: 57.71 },
-        { id: "right", label: { fr: "UMP et alliés", en: "UMP and allies" }, color: "#2f6fdf", first: 27.92, second: 36.07 },
-        { id: "center", label: { fr: "Centre (MoDem)", en: "Centre (MoDem)" }, color: "#f08c00", first: 9.06, second: 2.36 },
-        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: "#2b9348", first: 6.78, second: 0 },
+        { id: "left", label: { fr: "PS-PCF-PRG-MRC", en: "Social-democratic left" }, color: POLITICAL_COLORS.left, first: 41.6, second: 57.71 },
+        { id: "right", label: { fr: "UMP et alliés", en: "UMP and allies" }, color: POLITICAL_COLORS.right, first: 27.92, second: 36.07 },
+        { id: "center", label: { fr: "Centre (MoDem)", en: "Centre (MoDem)" }, color: POLITICAL_COLORS.center, first: 9.06, second: 2.36 },
+        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: POLITICAL_COLORS.greens, first: 6.78, second: 0 },
       ],
       notes: {
         fr: "Le centre pèse encore fortement en 2008, tandis que les écologistes restent autonomes au premier tour avant fusion.",
@@ -94,13 +111,13 @@
         name: "Anne Hidalgo",
         partyLabel: { fr: "Gauche social-démocrate", en: "Social-democratic left" },
         shortLabel: { fr: "Gauche", en: "Left" },
-        color: "#e14b5a",
+        color: POLITICAL_COLORS.left,
       },
       shares: [
-        { id: "right", label: { fr: "UMP-UDI-MoDem", en: "UMP-UDI-MoDem" }, color: "#2f6fdf", first: 35.91, second: 44.06 },
-        { id: "left", label: { fr: "PS-PCF-PRG", en: "Social-democratic left" }, color: "#e14b5a", first: 34.4, second: 53.33 },
-        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: "#2b9348", first: 8.86, second: 0 },
-        { id: "lfiLike", label: { fr: "Gauche radicale", en: "Radical left" }, color: "#d9487a", first: 4.94, second: 1.35 },
+        { id: "right", label: { fr: "UMP-UDI-MoDem", en: "UMP-UDI-MoDem" }, color: POLITICAL_COLORS.right, first: 35.91, second: 44.06 },
+        { id: "left", label: { fr: "PS-PCF-PRG", en: "Social-democratic left" }, color: POLITICAL_COLORS.left, first: 34.4, second: 53.33 },
+        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: POLITICAL_COLORS.greens, first: 8.86, second: 0 },
+        { id: "lfiLike", label: { fr: "Gauche radicale", en: "Radical left" }, color: POLITICAL_COLORS.lfiLike, first: 4.94, second: 1.35 },
       ],
       notes: {
         fr: "Anne Hidalgo gagne Paris en 2014. La gauche radicale, ici portée par Danielle Simonnet, est distinguée des écologistes.",
@@ -118,14 +135,14 @@
         name: "Anne Hidalgo",
         partyLabel: { fr: "Gauche municipale", en: "Municipal left" },
         shortLabel: { fr: "Gauche", en: "Left" },
-        color: "#e14b5a",
+        color: POLITICAL_COLORS.left,
       },
       shares: [
-        { id: "left", label: { fr: "PS-PCF-alliés", en: "Social-democratic left" }, color: "#e14b5a", first: 29.33, second: 48.49 },
-        { id: "right", label: { fr: "LR et alliés", en: "Republican right" }, color: "#2f6fdf", first: 22.72, second: 34.31 },
-        { id: "center", label: { fr: "Centre macroniste", en: "Macronist centre" }, color: "#f08c00", first: 25.14, second: 13.98 },
-        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: "#2b9348", first: 10.79, second: 0 },
-        { id: "lfiLike", label: { fr: "LFI et gauche radicale", en: "LFI and radical left" }, color: "#d9487a", first: 4.57, second: 1.06 },
+        { id: "left", label: { fr: "PS-PCF-alliés", en: "Social-democratic left" }, color: POLITICAL_COLORS.left, first: 29.33, second: 48.49 },
+        { id: "right", label: { fr: "LR et alliés", en: "Republican right" }, color: POLITICAL_COLORS.right, first: 22.72, second: 34.31 },
+        { id: "center", label: { fr: "Centre macroniste", en: "Macronist centre" }, color: POLITICAL_COLORS.center, first: 25.14, second: 13.98 },
+        { id: "greens", label: { fr: "Écologistes", en: "Greens" }, color: POLITICAL_COLORS.greens, first: 10.79, second: 0 },
+        { id: "lfiLike", label: { fr: "LFI et gauche radicale", en: "LFI and radical left" }, color: POLITICAL_COLORS.lfiLike, first: 4.57, second: 1.06 },
       ],
       notes: {
         fr: "2020 est la bonne comparaison pour rappeler que LFI n’est pas un parti écologiste. Ici, la liste Simonnet reste distincte de la liste Belliard.",
@@ -463,63 +480,63 @@
     {
       matches: ["grégoire", "gregoire", "paris est à vous"],
       familyId: "left",
-      color: "#e14b5a",
+      color: POLITICAL_COLORS.left,
       label: { fr: "Centre gauche social-démocrate", en: "Social-democratic centre-left" },
       shortLabel: { fr: "Centre gauche", en: "Centre-left" },
     },
     {
       matches: ["dati", "changer paris"],
       familyId: "right",
-      color: "#2f6fdf",
+      color: POLITICAL_COLORS.right,
       label: { fr: "Droite républicaine", en: "Republican right" },
       shortLabel: { fr: "Droite", en: "Right" },
     },
     {
       matches: ["nouveau paris populaire", "simonnet", "décidons paris", "decidons paris"],
       familyId: "lfiLike",
-      color: "#d9487a",
+      color: POLITICAL_COLORS.lfiLike,
       label: { fr: "Gauche radicale / LFI", en: "Radical left / LFI" },
       shortLabel: { fr: "LFI / gauche radicale", en: "LFI / radical left" },
     },
     {
       matches: ["belliard", "écologie", "ecologie pour paris", "eelv", "les verts"],
       familyId: "greens",
-      color: "#2b9348",
+      color: POLITICAL_COLORS.greens,
       label: { fr: "Écologistes", en: "Greens" },
       shortLabel: { fr: "Écologistes", en: "Greens" },
     },
     {
       matches: ["bournazel", "apaisé", "apaise"],
       familyId: "center",
-      color: "#f08c00",
+      color: POLITICAL_COLORS.center,
       label: { fr: "Centre libéral", en: "Liberal centre" },
       shortLabel: { fr: "Centre", en: "Centre" },
     },
     {
       matches: ["villani", "buzyn", "lrem", "ensemble pour paris", "nouveau paris"],
       familyId: "center",
-      color: "#f08c00",
+      color: POLITICAL_COLORS.center,
       label: { fr: "Centre macroniste", en: "Macronist centre" },
       shortLabel: { fr: "Centre", en: "Centre" },
     },
     {
       matches: ["knafo", "rn", "federbusch"],
       familyId: "farRight",
-      color: "#6a4c93",
+      color: POLITICAL_COLORS.farRight,
       label: { fr: "Extrême droite", en: "Far right" },
       shortLabel: { fr: "Extrême droite", en: "Far right" },
     },
     {
       matches: ["retrouvons paris"],
       familyId: "centerRight",
-      color: "#1098ad",
+      color: POLITICAL_COLORS.centerRight,
       label: { fr: "Divers centre-droit", en: "Independent centre-right" },
       shortLabel: { fr: "Centre-droit", en: "Centre-right" },
     },
     {
       matches: ["npa", "lutte ouvrière", "lutte ouvriere", "lo"],
       familyId: "farLeft",
-      color: "#8b0000",
+      color: POLITICAL_COLORS.farLeft,
       label: { fr: "Extrême gauche", en: "Far left" },
       shortLabel: { fr: "Extrême gauche", en: "Far left" },
     },
@@ -530,7 +547,7 @@
     return (
       PARTY_PROFILES.find((profile) => profile.matches.some((match) => lower.includes(match))) || {
         familyId: "other",
-        color: "#7d776f",
+        color: POLITICAL_COLORS.other,
         label: { fr: "Divers", en: "Other" },
         shortLabel: { fr: "Divers", en: "Other" },
       }
@@ -538,15 +555,15 @@
   }
 
   const FAMILY_META = {
-    left: { label: { fr: "Gauche sociale", en: "Social left" }, color: "#e14b5a" },
-    right: { label: { fr: "Droite républicaine", en: "Republican right" }, color: "#2f6fdf" },
-    greens: { label: { fr: "Écologistes", en: "Greens" }, color: "#2b9348" },
-    lfiLike: { label: { fr: "LFI / gauche radicale", en: "LFI / radical left" }, color: "#d9487a" },
-    center: { label: { fr: "Centre", en: "Centre" }, color: "#f08c00" },
-    centerRight: { label: { fr: "Centre-droit", en: "Centre-right" }, color: "#1098ad" },
-    farRight: { label: { fr: "Extrême droite", en: "Far right" }, color: "#6a4c93" },
-    farLeft: { label: { fr: "Extrême gauche", en: "Far left" }, color: "#8b0000" },
-    other: { label: { fr: "Divers", en: "Other" }, color: "#7d776f" },
+    left: { label: { fr: "Gauche sociale", en: "Social left" }, color: POLITICAL_COLORS.left },
+    right: { label: { fr: "Droite républicaine", en: "Republican right" }, color: POLITICAL_COLORS.right },
+    greens: { label: { fr: "Écologistes", en: "Greens" }, color: POLITICAL_COLORS.greens },
+    lfiLike: { label: { fr: "LFI / gauche radicale", en: "LFI / radical left" }, color: POLITICAL_COLORS.lfiLike },
+    center: { label: { fr: "Centre", en: "Centre" }, color: POLITICAL_COLORS.center },
+    centerRight: { label: { fr: "Centre-droit", en: "Centre-right" }, color: POLITICAL_COLORS.centerRight },
+    farRight: { label: { fr: "Extrême droite", en: "Far right" }, color: POLITICAL_COLORS.farRight },
+    farLeft: { label: { fr: "Extrême gauche", en: "Far left" }, color: POLITICAL_COLORS.farLeft },
+    other: { label: { fr: "Divers", en: "Other" }, color: POLITICAL_COLORS.other },
   };
 
   const PORTRAIT_BY_NAME = {
@@ -740,20 +757,22 @@
 
   let fetched;
   try {
-    const [geojson, round1, round2] = await Promise.all([
-      fetch(SOURCE_URLS.geometry).then((response) => {
-        if (!response.ok) throw new Error("2026 bureau geometry request failed.");
-        return response.json();
-      }),
-      fetch(SOURCE_URLS.round1Json).then((response) => {
-        if (!response.ok) throw new Error("First round request failed.");
-        return response.json();
-      }),
-      fetch(SOURCE_URLS.round2Json).then((response) => {
-        if (!response.ok) throw new Error("Second round request failed.");
-        return response.json();
-      }),
-    ]);
+    const [geojson, round1, round2] = LOCAL_2026
+      ? [LOCAL_2026.geojson, LOCAL_2026.round1, LOCAL_2026.round2]
+      : await Promise.all([
+          fetch(SOURCE_URLS.geometry).then((response) => {
+            if (!response.ok) throw new Error("2026 bureau geometry request failed.");
+            return response.json();
+          }),
+          fetch(SOURCE_URLS.round1Json).then((response) => {
+            if (!response.ok) throw new Error("First round request failed.");
+            return response.json();
+          }),
+          fetch(SOURCE_URLS.round2Json).then((response) => {
+            if (!response.ok) throw new Error("Second round request failed.");
+            return response.json();
+          }),
+        ]);
 
     fetched = {
       rounds: {
@@ -939,15 +958,16 @@
   }
 
   function normalizeHistoricalList(list) {
-    const family = OFFICIAL_HISTORY.familyMeta?.[list.id] || FAMILY_META[list.id] || FAMILY_META.other;
+    const historyMeta = OFFICIAL_HISTORY.familyMeta?.[list.id] || {};
+    const family = FAMILY_META[list.id] || FAMILY_META.other;
     return {
       id: list.id,
-      name: family.label[state.language],
-      shortName: family.label[state.language],
+      name: (historyMeta.label || family.label)[state.language],
+      shortName: (historyMeta.label || family.label)[state.language],
       party: {
         familyId: list.id,
-        label: family.label,
-        shortLabel: family.label,
+        label: historyMeta.label || family.label,
+        shortLabel: historyMeta.label || family.label,
       },
       color: family.color,
       cityShare: list.shareCast,
@@ -1847,19 +1867,21 @@
 
   L.control.zoom({ position: "topright" }).addTo(map);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; CARTO',
-    subdomains: "abcd",
-    maxZoom: 20,
-  }).addTo(map);
+  if (!IS_LOCAL_CONTEXT) {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; CARTO',
+      subdomains: "abcd",
+      maxZoom: 20,
+    }).addTo(map);
 
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-    attribution: "",
-    subdomains: "abcd",
-    pane: "overlayPane",
-    maxZoom: 20,
-  }).addTo(map);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
+      attribution: "",
+      subdomains: "abcd",
+      pane: "overlayPane",
+      maxZoom: 20,
+    }).addTo(map);
+  }
 
   const geoLayer = L.geoJSON(liveData.features, {
     style: getMapStyle,
