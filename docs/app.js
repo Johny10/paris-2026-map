@@ -235,11 +235,26 @@
         "La maille bureau est disponible pour 2026. Les années 1995 à 2020 sont restituées dans l’onglet chronologie avec des séries plus synthétiques.",
       historyTitle: "Municipales parisiennes depuis 1995",
       demographyTitle: "Paris change, le vote aussi",
+      historyPlayerTitle: "Paris au fil des scrutins",
+      historyPlayerCopy:
+        "Lance la lecture automatique pour voir le paysage politique changer tous les deux secondes, de 1995 à 2026.",
       historyChartTitle: "Rapports de force",
       historyEvolutionTitle: "Lecture politique",
+      playTimeline: "Lecture auto",
+      pauseTimeline: "Pause",
+      previousElection: "Précédente",
+      nextElection: "Suivante",
+      autoplaySpeed: "1 élection toutes les 2 s",
+      selectedElection: "Élection affichée",
+      timelineLandscape: "Paysage politique",
       demoSummaryTitle: "Repères démographiques",
       populationTitle: "Population municipale",
       educationTitle: "Part de diplômés du supérieur",
+      politicsEducationTitle: "Vote et capital scolaire",
+      politicsEducationCopy:
+        "Plus Paris se diplôme, plus le bloc gauche-écologistes se renforce au centre et à l’est, tandis que la droite reste mieux ancrée à l’ouest.",
+      leftEcologyBloc: "Bloc gauche + écologistes",
+      tertiaryTrend: "Diplômés du supérieur",
       populationFootnote:
         "Source : Insee, population en historique depuis 1968 pour la commune de Paris (75056).",
       educationFootnote:
@@ -330,11 +345,26 @@
         "Polling-station geometry is available for 2026. The 1995-2020 cycles are shown in the timeline tab with more synthetic series.",
       historyTitle: "Paris municipal elections since 1995",
       demographyTitle: "Paris changes, so does the vote",
+      historyPlayerTitle: "Paris over time",
+      historyPlayerCopy:
+        "Start autoplay to watch the political landscape shift every two seconds from 1995 to 2026.",
       historyChartTitle: "Balance of forces",
       historyEvolutionTitle: "Political reading",
+      playTimeline: "Autoplay",
+      pauseTimeline: "Pause",
+      previousElection: "Previous",
+      nextElection: "Next",
+      autoplaySpeed: "1 election every 2 sec",
+      selectedElection: "Displayed election",
+      timelineLandscape: "Political landscape",
       demoSummaryTitle: "Demographic anchors",
       populationTitle: "Municipal population",
       educationTitle: "Share with tertiary education",
+      politicsEducationTitle: "Vote and educational capital",
+      politicsEducationCopy:
+        "As Paris becomes more highly educated, the left-and-Greens bloc strengthens in the centre and east, while the right remains stronger in the west.",
+      leftEcologyBloc: "Left + Greens bloc",
+      tertiaryTrend: "Tertiary graduates",
       populationFootnote:
         "Source: Insee, historical population series for the commune of Paris (75056).",
       educationFootnote:
@@ -370,9 +400,13 @@
     metric: "leader",
     candidate: null,
     dropdownOpen: false,
+    historyPlaying: false,
     hoveredKey: null,
     selectedKey: null,
   };
+
+  const HISTORY_PLAYBACK_MS = 2000;
+  let historyPlaybackTimer = null;
 
   const dom = {
     eyebrow: document.getElementById("eyebrow"),
@@ -415,6 +449,7 @@
     historyView: document.getElementById("history-view"),
     historyKicker: document.getElementById("history-kicker"),
     historyTitle: document.getElementById("history-title"),
+    historyToolbar: document.getElementById("history-toolbar"),
     historySummary: document.getElementById("history-summary"),
     historyChart: document.getElementById("history-chart"),
     historyEvolution: document.getElementById("history-evolution"),
@@ -424,6 +459,7 @@
     demoSummary: document.getElementById("demo-summary"),
     demoPopulation: document.getElementById("demo-population"),
     demoEducation: document.getElementById("demo-education"),
+    demoPolitics: document.getElementById("demo-politics"),
     summaryCard: document.getElementById("summary-card"),
     sourceCard: document.getElementById("source-card"),
   };
@@ -650,6 +686,7 @@
     dom.heroMeta.innerHTML = `<span class="meta-pill">${t("loading")}</span>`;
     dom.summaryCard.innerHTML = `<div class="detail-title">${t("loading")}</div><p class="empty-copy">${t("loadingCopy")}</p>`;
     dom.sourceCard.innerHTML = `<div class="detail-title">${t("sources")}</div><p class="source-copy">${t("sourceFootnote")}</p>`;
+    dom.historyToolbar.innerHTML = `<div class="detail-title">${t("loading")}</div>`;
     dom.historySummary.innerHTML = `<div class="detail-title">${t("loading")}</div>`;
     dom.demoSummary.innerHTML = `<div class="detail-title">${t("loading")}</div>`;
   }
@@ -1081,6 +1118,41 @@
     return currentMapRows().filter((row) => row.castVotes > 0).length;
   }
 
+  function stopHistoryPlayback() {
+    if (historyPlaybackTimer) {
+      clearInterval(historyPlaybackTimer);
+      historyPlaybackTimer = null;
+    }
+    state.historyPlaying = false;
+  }
+
+  function stepHistoryYear(direction = 1) {
+    const currentIndex = YEAR_OPTIONS.findIndex((entry) => entry.id === state.year);
+    const nextIndex = currentIndex < 0 ? 0 : (currentIndex + direction + YEAR_OPTIONS.length) % YEAR_OPTIONS.length;
+    state.year = YEAR_OPTIONS[nextIndex].id;
+    state.round = "round2";
+    state.selectedKey = null;
+    state.hoveredKey = null;
+  }
+
+  function startHistoryPlayback() {
+    stopHistoryPlayback();
+    state.historyPlaying = true;
+    historyPlaybackTimer = setInterval(() => {
+      stepHistoryYear(1);
+      renderAll();
+    }, HISTORY_PLAYBACK_MS);
+  }
+
+  function toggleHistoryPlayback() {
+    if (state.historyPlaying) {
+      stopHistoryPlayback();
+    } else {
+      startHistoryPlayback();
+    }
+    renderAll();
+  }
+
   function renderToggle(container, options, activeValue, onChange) {
     container.innerHTML = "";
     options.forEach((option) => {
@@ -1113,6 +1185,74 @@
     dom.historyTitle.textContent = t("historyTitle");
     dom.demographyTitle.textContent = t("demographyTitle");
     dom.resetView.textContent = t("reset");
+  }
+
+  function yearLandscape(entry) {
+    return entry.shares
+      .slice()
+      .sort((a, b) => (state.round === "round1" ? b.first - a.first : (b.second || b.first) - (a.second || a.first)))
+      .slice(0, 3)
+      .map((share) => {
+        const value = state.round === "round1" ? share.first : share.second || share.first;
+        return `<span class="landscape-segment" style="width:${Math.max(value, 5)}%;background:${share.color}"></span>`;
+      })
+      .join("");
+  }
+
+  function renderHistoryToolbar() {
+    dom.historyToolbar.innerHTML = `
+      <div class="history-toolbar-head">
+        <div>
+          <div class="detail-title">${t("historyPlayerTitle")}</div>
+          <p class="chart-copy">${t("historyPlayerCopy")}</p>
+        </div>
+        <div class="history-toolbar-actions">
+          <button type="button" class="ghost-button history-action" id="history-prev">${t("previousElection")}</button>
+          <button type="button" class="ghost-button history-action history-action-primary" id="history-play">${
+            state.historyPlaying ? t("pauseTimeline") : t("playTimeline")
+          }</button>
+          <button type="button" class="ghost-button history-action" id="history-next">${t("nextElection")}</button>
+        </div>
+      </div>
+      <div class="history-toolbar-meta">
+        <span class="status-pill">${t("selectedElection")} · ${state.year}</span>
+        <span class="meta-pill">${t("autoplaySpeed")}</span>
+      </div>
+      <div class="timeline-strip" role="list" aria-label="${t("timelineLandscape")}">
+        ${YEAR_OPTIONS.map((entry) => {
+          const election = getElection(entry.id);
+          return `
+            <button type="button" class="timeline-chip ${entry.id === state.year ? "is-active" : ""}" data-year="${entry.id}">
+              <span class="timeline-chip-year">${entry.label}</span>
+              <span class="timeline-chip-winner">${election.winner.name}</span>
+              <span class="timeline-chip-landscape">${yearLandscape(election)}</span>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    `;
+
+    dom.historyToolbar.querySelector("#history-prev")?.addEventListener("click", () => {
+      stopHistoryPlayback();
+      stepHistoryYear(-1);
+      renderAll();
+    });
+    dom.historyToolbar.querySelector("#history-play")?.addEventListener("click", () => {
+      toggleHistoryPlayback();
+    });
+    dom.historyToolbar.querySelector("#history-next")?.addEventListener("click", () => {
+      stopHistoryPlayback();
+      stepHistoryYear(1);
+      renderAll();
+    });
+    dom.historyToolbar.querySelectorAll("[data-year]").forEach((button) => {
+      button.addEventListener("click", () => {
+        stopHistoryPlayback();
+        state.year = button.getAttribute("data-year");
+        state.round = "round2";
+        renderAll();
+      });
+    });
   }
 
   function renderWinnerBanner() {
@@ -1630,6 +1770,8 @@
     const effectiveRound =
       state.round === "round2" && !election.shares.some((entry) => entry.second) ? "round1" : state.round;
 
+    renderHistoryToolbar();
+
     dom.historySummary.innerHTML = `
       <div class="detail-title">${t("historyTitle")}</div>
       <div class="detail-headline">${election.label}</div>
@@ -1751,6 +1893,36 @@
       )}
       <p class="footnote"><a href="${DEMOGRAPHY.sourceEducation}" target="_blank" rel="noreferrer">${t("educationFootnote")}</a></p>
     `;
+
+    dom.demoPolitics.innerHTML = `
+      <div class="chart-title">${t("politicsEducationTitle")}</div>
+      <p class="chart-copy">${t("politicsEducationCopy")}</p>
+      ${lineChart(
+        [
+          {
+            label: t("leftEcologyBloc"),
+            values: HISTORY.map((entry) => ({
+              label: entry.label,
+              value: entry.shares.reduce((acc, share) => {
+                const family = normalizeHistoryFamilyId(share.id);
+                return family === "left" || family === "greens" ? acc + (share.second || share.first || 0) : acc;
+              }, 0),
+            })),
+          },
+          {
+            label: t("tertiaryTrend"),
+            values: HISTORY.map((entry) => {
+              const nearest = DEMOGRAPHY.tertiary.reduce((closest, sample) => {
+                return Math.abs(sample.year - Number(entry.year)) < Math.abs(closest.year - Number(entry.year)) ? sample : closest;
+              }, DEMOGRAPHY.tertiary[0]);
+              return { label: entry.label, value: nearest.value };
+            }),
+          },
+        ],
+        formatPct,
+        [POLITICAL_COLORS.left, POLITICAL_COLORS.greens],
+      )}
+    `;
   }
 
   function renderSources() {
@@ -1805,6 +1977,9 @@
     if (state.section === "map" && !hasOfficialMapYear(state.year)) {
       state.year = "2026";
     }
+    if (state.section !== "history" && state.historyPlaying) {
+      stopHistoryPlayback();
+    }
     if (state.year !== "2026") {
       state.granularity = "arrondissement";
     }
@@ -1820,9 +1995,13 @@
       if (value === "map" && !hasOfficialMapYear(state.year)) {
         state.year = "2026";
       }
+      if (value !== "history") {
+        stopHistoryPlayback();
+      }
       renderAll();
     });
     renderToggle(dom.yearToggle, state.section === "map" ? MAP_YEAR_OPTIONS : YEAR_OPTIONS, state.year, (value) => {
+      stopHistoryPlayback();
       state.year = value;
       if (value !== "2026") {
         state.granularity = "arrondissement";
@@ -1833,6 +2012,7 @@
       renderAll();
     });
     renderToggle(dom.roundToggle, ROUND_OPTIONS, state.round, (value) => {
+      if (state.section === "history") stopHistoryPlayback();
       state.round = value;
       ensureCandidate();
       renderAll();

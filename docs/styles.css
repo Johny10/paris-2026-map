@@ -523,6 +523,95 @@ select {
   gap: 12px;
 }
 
+.history-toolbar-card {
+  margin-bottom: 12px;
+  background:
+    radial-gradient(circle at top right, rgba(47, 111, 223, 0.12), transparent 14rem),
+    radial-gradient(circle at bottom left, rgba(225, 75, 90, 0.12), transparent 14rem),
+    rgba(255, 251, 246, 0.94);
+}
+
+.history-toolbar-head {
+  display: grid;
+  gap: 12px;
+}
+
+.history-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-action {
+  min-width: 0;
+}
+
+.history-action-primary {
+  background: var(--ink);
+  color: #fff9f0;
+  border-color: var(--ink);
+}
+
+.history-toolbar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.timeline-strip {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.timeline-chip {
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.timeline-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(31, 26, 23, 0.08);
+}
+
+.timeline-chip.is-active {
+  border-color: rgba(31, 26, 23, 0.22);
+  box-shadow: 0 14px 34px rgba(31, 26, 23, 0.12);
+}
+
+.timeline-chip-year {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.timeline-chip-winner {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.timeline-chip-landscape {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.landscape-segment {
+  height: 10px;
+  border-radius: 999px;
+  min-width: 20px;
+  flex: 1 1 0;
+}
+
 .mobile-summary-grid {
   margin-top: 12px;
 }
@@ -808,6 +897,16 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .history-toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .history-action {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
   .summary-stat span {
     font-size: 1.18rem;
   }
@@ -859,8 +958,18 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .history-toolbar-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .timeline-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   #history-evolution,
-  #demo-summary {
+  #demo-summary,
+  #demo-politics {
     grid-column: 1 / -1;
   }
 }
