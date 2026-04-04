@@ -827,6 +827,16 @@
   const featureIndex = new Map(liveData.features.map((feature) => [feature.properties.id_bv, feature]));
   const bureauLayerIndex = new Map();
   const arrondissementLayerIndex = new Map();
+  const EMPTY_RESULT_ROW = Object.freeze({
+    registeredVoters: 0,
+    castVotes: 0,
+    turnoutPct: 0,
+    countingComplete: false,
+    leaderId: null,
+    leaderShare: 0,
+    lists: [],
+    listLookup: {},
+  });
 
   function getRoundMeta(roundId) {
     return liveData.rounds[roundId];
@@ -837,7 +847,7 @@
   }
 
   function getFeatureRound(feature, roundId) {
-    return feature.properties.rounds[roundId];
+    return feature?.properties?.rounds?.[roundId] || EMPTY_RESULT_ROW;
   }
 
   function buildArrondissementAggregates(roundId) {
@@ -1354,8 +1364,9 @@
   }
 
   function getMapStyle(feature) {
-    const isBureauMode = currentGeometryMode() === "bureau";
-    const dataRow = isBureauMode ? getFeatureRound(feature, state.round) : getArrondissementRow(feature.properties.arrondissement);
+    const isBureauFeature = Boolean(feature?.properties?.rounds);
+    const isBureauMode = currentGeometryMode() === "bureau" && isBureauFeature;
+    const dataRow = isBureauFeature ? getFeatureRound(feature, state.round) : getArrondissementRow(feature.properties.arrondissement);
     const activeKey = isBureauMode
       ? feature.properties.id_bv
       : `arr-${arrondissementGroupKey(feature.properties.arrondissement)}`;
@@ -1646,14 +1657,14 @@
   }
 
   function tooltipHtml(feature) {
-    const record =
-      currentGeometryMode() === "bureau"
-        ? { label: feature.properties.label, arrondissement: feature.properties.arrondissement, ...getFeatureRound(feature, state.round) }
-        : {
-            label: districtLabel(feature.properties.arrondissement),
-            arrondissement: feature.properties.arrondissement,
-            ...getArrondissementRow(feature.properties.arrondissement),
-          };
+    const isBureauFeature = Boolean(feature?.properties?.rounds);
+    const record = isBureauFeature
+      ? { label: feature.properties.label, arrondissement: feature.properties.arrondissement, ...getFeatureRound(feature, state.round) }
+      : {
+          label: districtLabel(feature.properties.arrondissement),
+          arrondissement: feature.properties.arrondissement,
+          ...getArrondissementRow(feature.properties.arrondissement),
+        };
     const leader = getDisplayedCandidateMeta(state.round, record.leaderId);
     const leaderLabel = record.castVotes ? leader?.party.shortLabel[state.language] || "N/A" : t("noDataYet");
     const leadShare = record.castVotes ? formatPct(record.leaderShare) : "…";
